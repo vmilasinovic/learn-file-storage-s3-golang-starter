@@ -11,8 +11,8 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/google/uuid"
+	"github.com/vmilasinovic/learn-file-storage-s3-golang-starter/internal/auth"
 )
 
 const MAX_UPLOAD_SIZE = 1 << 30
@@ -120,6 +120,9 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusInternalServerError, "Unable to create videoIDString", err)
 		return
 	}
+
+	fileKeyPrefix := video.getVideoAspectRatio(videoNewFilename)
+
 	fileKey := videoNewFilename + ".mp4"
 
 	s3Params := s3.PutObjectInput{
