@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os/exec"
 )
 
@@ -15,21 +16,22 @@ type videoIndex struct {
 	Streams []videoStream `json:"streams"`
 }
 
-func getVideoAspectRatio(filePath string) (string, error) {
+func GetVideoAspectRatio(filePath string) (string, error) {
+	fmt.Println(filePath)
 	cmd := exec.Command("ffprobe", "-v", "error", "-print_format", "json", "-show_streams", filePath)
 
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
-		return "", err
+		return "", errors.New("failed to run command")
 	}
 
 	dataBytes := out.Bytes()
 	var vIndex videoIndex
 	err = json.Unmarshal(dataBytes, &vIndex)
 	if err != nil {
-		return "", err
+		return "", errors.New("failed unmarshal JSON")
 	}
 
 	var vWidth int
@@ -46,9 +48,9 @@ func getVideoAspectRatio(filePath string) (string, error) {
 
 	vCalc = float32(vWidth) / float32(vHeight)
 	if vCalc >= 1.7 && vCalc <= 1.8 {
-		vAspectRatio = "16:9"
+		vAspectRatio = "landscape"
 	} else if vCalc >= 0.5 && vCalc <= 0.6 {
-		vAspectRatio = "9:16"
+		vAspectRatio = "portrait"
 	} else {
 		vAspectRatio = "other"
 	}

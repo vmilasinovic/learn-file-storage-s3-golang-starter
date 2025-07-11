@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 	"github.com/vmilasinovic/learn-file-storage-s3-golang-starter/internal/auth"
+	"github.com/vmilasinovic/learn-file-storage-s3-golang-starter/internal/video"
 )
 
 const MAX_UPLOAD_SIZE = 1 << 30
@@ -121,9 +122,13 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	fileKeyPrefix := video.getVideoAspectRatio(videoNewFilename)
+	fileKeyPrefix, err := video.GetVideoAspectRatio(f.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Unable to get video aspect ratio prefix: "+err.Error(), err)
+		return
+	}
 
-	fileKey := videoNewFilename + ".mp4"
+	fileKey := fileKeyPrefix + "/" + videoNewFilename + ".mp4"
 
 	s3Params := s3.PutObjectInput{
 		Bucket:      &cfg.s3Bucket,
