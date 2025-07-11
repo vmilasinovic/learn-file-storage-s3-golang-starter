@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os/exec"
 )
 
@@ -17,7 +16,6 @@ type videoIndex struct {
 }
 
 func GetVideoAspectRatio(filePath string) (string, error) {
-	fmt.Println(filePath)
 	cmd := exec.Command("ffprobe", "-v", "error", "-print_format", "json", "-show_streams", filePath)
 
 	var out bytes.Buffer
@@ -56,4 +54,16 @@ func GetVideoAspectRatio(filePath string) (string, error) {
 	}
 
 	return vAspectRatio, nil
+}
+
+func ProcessVideoFastStart(filepath string) (string, error) {
+	newFilePath := filepath + ".processing"
+
+	cmd := exec.Command("ffmpeg", "-i", filepath, "-c", "copy", "-movflags", "faststart", "-f", "mp4", newFilePath)
+	err := cmd.Run()
+	if err != nil {
+		return "", errors.New("failed to move faststart flags in the file")
+	}
+
+	return newFilePath, nil
 }

@@ -9,6 +9,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
@@ -97,8 +98,6 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusInternalServerError, "Failed to create a tmp file for upload", err)
 		return
 	}
-	defer os.Remove(f.Name())
-	defer f.Close()
 
 	_, err = io.Copy(f, file)
 	if err != nil {
@@ -128,12 +127,44 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	processedTmpFile, err := video.ProcessVideoFastStart(f.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Unable to preprocess TMP file: "+err.Error(), err)
+		return
+	}
+
+	err = f.Close()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to close temp file: "+err.Error(), err)
+		return
+	}
+	err = os.Remove(f.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to clean temp file: "+err.Error(), err)
+		return
+	}
+
+	newFilename := strings.Replace(processedTmpFile, ".processing", "", 1)
+	err = os.Rename(processedTmpFile, newFilename)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to rename processed TMP file: "+err.Error(), err)
+		return
+	}
+
+	newF, err := os.Open(newFilename)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to open processed TMP file: "+err.Error(), err)
+		return
+	}
+	defer os.Remove(newFilename)
+	defer newF.Close()
+
 	fileKey := fileKeyPrefix + "/" + videoNewFilename + ".mp4"
 
 	s3Params := s3.PutObjectInput{
 		Bucket:      &cfg.s3Bucket,
 		Key:         &fileKey,
-		Body:        f,
+		Body:        newF,
 		ContentType: &mediatype,
 	}
 
