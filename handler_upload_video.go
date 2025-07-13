@@ -175,7 +175,10 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Update the file's URL in the db
-	videoURL := "https://" + cfg.s3Bucket + ".s3." + cfg.s3Region + ".amazonaws.com/" + fileKey
+
+	// videoURL := cfg.s3Bucket + "," + fileKey
+
+	videoURL := cfg.s3CfDistribution + "/" + fileKey
 
 	updatedVideo := videoMetadata
 	updatedVideo.VideoURL = &videoURL
@@ -184,6 +187,14 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusInternalServerError, "Failed update video data in db", err)
 		return
 	}
+
+	/*
+		respVideo, err := cfg.DBVideoToSignedVideo(updatedVideo)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Failed to return a presigned URL for the updated video", err)
+			return
+		}
+	*/
 
 	respondWithJSON(w, http.StatusOK, updatedVideo)
 }

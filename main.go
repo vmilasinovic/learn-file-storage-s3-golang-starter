@@ -134,3 +134,20 @@ func main() {
 	log.Printf("Serving on: http://localhost:%s/app/\n", port)
 	log.Fatal(srv.ListenAndServe())
 }
+
+/*
+func (cfg *apiConfig) DBVideoToSignedVideo(vid database.Video) (database.Video, error) {
+	vURL := strings.Split(*vid.VideoURL, ",")
+	bucket := vURL[0]
+	key := vURL[1]
+	expire := time.Second * 60
+	presignedURL, err := video.GeneratePresignedURL(cfg.s3Client, bucket, key, expire)
+	if err != nil {
+		return database.Video{}, errors.New("failed to generate a presigned URL for a signed URL" + err.Error())
+	}
+
+	vid.VideoURL = &presignedURL
+
+	return vid, nil
+}
+*/
